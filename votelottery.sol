@@ -25,6 +25,11 @@ contract votelottery is Ownable {
         vote_is_over = false;
     }
     
+    event VoteResult(
+        string indexed name,
+        uint indexed votes
+    );
+    
     function renounceOwnership() public onlyOwner {
         require(vote_is_over == true);
         super.renounceOwnership();
@@ -99,5 +104,12 @@ contract votelottery is Ownable {
         _winner.transfer(_amount);
         
         emit winner('winner is', _winner, _amount);
+    }
+    
+     function getResult() public {
+        
+        for(uint256 p = 0; p < candidates.length ; p++) {
+            emit VoteResult(candidates[p].name, candidates[p].votes);     
+        }
     }
 }

@@ -30,6 +30,8 @@ contract votelottery is Ownable {
         uint indexed votes	
     );
     
+    event winnerResult(address _address, uint _amount);
+    
     function renounceOwnership() public onlyOwner {
         require(vote_is_over == true);
         super.renounceOwnership();
@@ -76,7 +78,7 @@ contract votelottery is Ownable {
         
         uint256 winnerIdx = random(tickets.length); 
         address winner = tickets[winnerIdx]; 
-        transferToWinner(winner, owner.balance); 
+        transferTotalEtherToWinner(winner); 
     }
     
     modifier canVote() {
@@ -92,23 +94,27 @@ contract votelottery is Ownable {
         candidates[candidate_].votes = candidates[candidate_].votes.add(1);
     }
     
-    event winner(address _address, uint _amount);
-    
-    
+
     function random(uint256 _range) private view returns (uint256) {
         return uint256(keccak256(block.timestamp, block.difficulty))%_range;
     }
     
-
-    function transferToWinner(address _winner, uint256 _amount) public onlyOwner payable {
+    function transferTotalEtherToWinner(address _winner) public onlyOwner payable {
         
-        require(balance() >= _amount);
-        
-        _winner.transfer(_amount);
-        
-        emit winner(_winner, _amount);
+        require(balance() > 0);
+        uint256 amount = balance();
+        _winner.transfer(amount);
+        emit winnerResult(_winner, amount);
     }
     
+/*
+    function transferEtherToWinner(address _winner, uint256 _amount) public onlyOwner payable {
+        
+        require(balance() >= _amount);
+        _winner.transfer(_amount);
+        emit winnerResult(_winner, _amount);
+    }
+*/    
     function getResult() public {	
  	
         for(uint256 p = 0; p < candidates.length ; p++) {	

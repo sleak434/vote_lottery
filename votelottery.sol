@@ -42,9 +42,9 @@ contract votelottery is Ownable {
         require(bytes(candidate_name).length > 0);
         require(vote_started == false);
         uint256 length = candidates.length;
-        // for (uint256 i = 0; i < length; i.add(1)) {
-        //     require(keccak256(bytes(candidate_name)) != keccak256(bytes(candidates[i].name)));
-        // }
+        for (uint256 i = 0; i < length; i = i.add(1)) {
+            require(keccak256(bytes(candidate_name)) != keccak256(bytes(candidates[i].name)));
+        }
         candidates.length = candidates.length.add(1);
         candidates[length].name = candidate_name;
     }

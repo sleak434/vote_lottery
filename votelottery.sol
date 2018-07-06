@@ -78,10 +78,8 @@ contract votelottery is Ownable {
     
     // 보유하고 있는 투표권을 후보자(candidates[candidate])에 행사한다.
     function vote(uint256 candidate) canVote vote_not_over public {
-        require(voters[msg.sender] != true);
-        
         voters[msg.sender] = true;
         // 유효하지 않은 후보자일 경우 트랜잭션 전 상태로 돌아가게 예외처리 되있음
-        candidates[candidate].votes.add(1);
+        candidates[candidate].votes = candidates[candidate].votes.add(1);
     }
 }

@@ -79,7 +79,7 @@ contract votelottery is Ownable {
         
         uint256 winnerIdx = random(tickets.length); 	
         address winner = tickets[winnerIdx]; 	
-        transferToWinner(winner, owner.balance); 
+        transferTotalEtherToWinner(winner); 
     }
     
     modifier canVote() {

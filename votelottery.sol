@@ -42,9 +42,9 @@ contract votelottery is Ownable {
         require(bytes(candidate_name).length > 0);
         require(vote_started == false);
         uint256 length = candidates.length;
-        for (uint256 i = 0; i < length; i.add(1)) {
-            require(keccak256(bytes(candidate_name)) != keccak256(bytes(candidates[i].name)));
-        }
+        // for (uint256 i = 0; i < length; i.add(1)) {
+        //     require(keccak256(bytes(candidate_name)) != keccak256(bytes(candidates[i].name)));
+        // }
         candidates.length = candidates.length.add(1);
         candidates[length].name = candidate_name;
     }
@@ -81,5 +81,23 @@ contract votelottery is Ownable {
         voters[msg.sender] = true;
         // 유효하지 않은 후보자일 경우 트랜잭션 전 상태로 돌아가게 예외처리 되있음
         candidates[candidate].votes = candidates[candidate].votes.add(1);
+    }
+    
+    event winner(string _msg, address _address, uint _amount);
+    
+    
+    function random(uint256 _range) private view returns (uint256) {
+        uint256 randNounce = 0;
+        return uint256(keccak256(now, msg.sender, randNounce)) % _range;
+    }
+    
+
+    function transferToWinner(address _winner, uint256 _amount) public onlyOwner payable {
+        
+        require(balance() >= _amount);
+        
+        _winner.transfer(_amount);
+        
+        emit winner('winner is', _winner, _amount);
     }
 }

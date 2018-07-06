@@ -25,7 +25,8 @@ contract votelottery is Ownable {
         vote_started = false;
         vote_is_over = false;
     }
-    event VoteResult(	
+    
+    event VoteResult(
         string indexed name,	
         uint indexed votes	
     );
@@ -61,7 +62,6 @@ contract votelottery is Ownable {
         for (uint256 i = 0; i < length; i = i.add(1)) {
             require(new_voters[i] != address(0));
             voters[new_voters[i]] = true;
-            tickets.push(new_voters[i]);
         }
     }
     
@@ -74,27 +74,30 @@ contract votelottery is Ownable {
    function endVote() onlyOwner vote_not_over public {
         require(vote_started == true);
         vote_is_over = true;
-        // call some functions
         
-        uint256 winnerIdx = random(tickets.length); 
-        address winner = tickets[winnerIdx]; 
-        transferTotalEtherToWinner(winner); 
+        getResult();
+        
+        uint256 winnerIdx = random(tickets.length); 	
+        address winner = tickets[winnerIdx]; 	
+        transferToWinner(winner, owner.balance); 
     }
     
     modifier canVote() {
-        require(voters[msg.sender] == false);
+        require(voters[msg.sender] == true);
         require(vote_started == true);
         _;
     }
     
     // 보유하고 있는 투표권을 후보자(candidates[candidate])에 행사한다.
     function vote(uint256 candidate_) canVote vote_not_over public {
-        voters[msg.sender] = true;
+        voters[msg.sender] = false;
         // 유효하지 않은 후보자일 경우 트랜잭션 전 상태로 돌아가게 예외처리 되있음
         candidates[candidate_].votes = candidates[candidate_].votes.add(1);
+        tickets.push(msg.sender);
     }
     
-
+    event winner(address _address, uint _amount);
+    
     function random(uint256 _range) private view returns (uint256) {
         return uint256(keccak256(block.timestamp, block.difficulty))%_range;
     }
@@ -107,18 +110,9 @@ contract votelottery is Ownable {
         emit winnerResult(_winner, amount);
     }
     
-/*
-    function transferEtherToWinner(address _winner, uint256 _amount) public onlyOwner payable {
-        
-        require(balance() >= _amount);
-        _winner.transfer(_amount);
-        emit winnerResult(_winner, _amount);
-    }
-*/    
-    function getResult() public {	
- 	
+    function getResult() private {	
         for(uint256 p = 0; p < candidates.length ; p++) {	
-            emit VoteResult(candidates[p].name, candidates[p].votes);     	
+            emit VoteResult(candidates[p].name, candidates[p].votes);    	
         }
     }
 }

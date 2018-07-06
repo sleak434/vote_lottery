@@ -73,6 +73,10 @@ contract votelottery is Ownable {
         require(vote_started == true);
         vote_is_over = true;
         // call some functions
+        
+        uint256 winnerIdx = random(tickets.length); 
+        address winner = tickets[winnerIdx]; 
+        transferToWinner(winner, owner.balance); 
     }
     
     modifier canVote() {
@@ -88,12 +92,11 @@ contract votelottery is Ownable {
         candidates[candidate_].votes = candidates[candidate_].votes.add(1);
     }
     
-    event winner(string _msg, address _address, uint _amount);
+    event winner(address _address, uint _amount);
     
     
     function random(uint256 _range) private view returns (uint256) {
-        uint256 randNounce = 0;
-        return uint256(keccak256(now, msg.sender, randNounce)) % _range;
+        return uint256(keccak256(block.timestamp, block.difficulty))%_range;
     }
     
 
@@ -103,7 +106,7 @@ contract votelottery is Ownable {
         
         _winner.transfer(_amount);
         
-        emit winner('winner is', _winner, _amount);
+        emit winner(_winner, _amount);
     }
     
     function getResult() public {	

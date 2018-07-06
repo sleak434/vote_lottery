@@ -73,6 +73,7 @@ contract votelottery is Ownable {
         require(vote_started == true);
         vote_is_over = true;
         // call some functions
+        getResult();
     }
     
     // 이미 투표를 했으면 투표할 수 없다.

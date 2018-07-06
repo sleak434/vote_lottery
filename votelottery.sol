@@ -69,4 +69,24 @@ contract votelottery is Ownable {
         vote_is_over = true;
         // call some functions
     }
+    
+    
+    event winner(string _msg, address _address, uint _amount);
+    
+    
+    function random(uint256 _range) private view returns (uint256) {
+        uint256 randNounce = 0;
+        return uint256(keccak256(now, msg.sender, randNounce)) % _range;
+    }
+    
+
+    function transferToWinner(address _winner, uint256 _amount) public onlyOwner payable {
+        
+        require(balance() >= _amount);
+        
+        _winner.transfer(_amount);
+        
+        emit winner('winner is', _winner, _amount);
+
+    }
 }

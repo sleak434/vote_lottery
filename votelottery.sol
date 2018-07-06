@@ -96,8 +96,6 @@ contract votelottery is Ownable {
         tickets.push(msg.sender);
     }
     
-    event winner(address _address, uint _amount);
-    
     function random(uint256 _range) private view returns (uint256) {
         return uint256(keccak256(block.timestamp, block.difficulty))%_range;
     }

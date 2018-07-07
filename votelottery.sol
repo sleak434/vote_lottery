@@ -31,6 +31,7 @@ contract votelottery is Ownable {
     bool public vote_started;
     bool public vote_is_over;
     bool public claim_is_over;
+    bool public at_least_one_claim;
     
     uint256 random_seed;
     
@@ -43,6 +44,7 @@ contract votelottery is Ownable {
         vote_started = false;
         vote_is_over = false;
         claim_is_over = false;
+        at_least_one_claim = false;
     }
     
     event VoteResult(
@@ -113,17 +115,40 @@ contract votelottery is Ownable {
         require(voters[msg.sender].hashed_ticket == keccak256(abi.encodePacked(msg.sender, ticket)));
         voters[msg.sender].canClaim = false;
         random_seed = random_seed ^ ticket;
+        at_least_one_claim = true;
     }
     
     function endClaim() onlyOwner public {
         require(vote_is_over == true);
+        require(at_least_one_claim == true);
         claim_is_over = true;
-        
-        uint256 winnerIdx = random_seed % tickets.length;	
-        address winner = tickets[winnerIdx]; 	
-        transferTotalEtherToWinner(winner); 
+
+        address winner = findWinner(random_seed, tickets.length);
+        transferTotalEtherToWinner(winner);
     }
     
+    function findWinner(uint256 _random_seed, uint256 num_tickets) internal view returns (address) {
+        for (int i = 0; i < 10; i++) {
+            uint256 winner_idx = _random_seed % num_tickets;
+            address winner_addr = tickets[winner_idx];
+            if (voters[winner_addr].canClaim == false) {
+                // we found a winner 
+                return winner_addr;
+            }
+            // this person could have been a winner but didn't claim
+            _random_seed = uint256(keccak256(abi.encodePacked(_random_seed, winner_addr)));
+            continue;
+        }
+        // linear search until winner is found
+        while (true) {
+            winner_idx = winner_idx.add(1) % num_tickets;
+            winner_addr = tickets[winner_idx];
+            if (voters[winner_addr].canClaim == false) {
+                return winner_addr;
+            }
+        }
+    }
+
     modifier canVote() {
         require(voters[msg.sender].canVote == true);
         require(vote_started == true);

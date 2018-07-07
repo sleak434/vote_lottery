@@ -54,11 +54,34 @@ contract votelottery is Ownable {
     
     event winnerResult(address _address, uint _amount);
     
+    function mulp(uint256 px, uint256 py, uint s) public returns (Pairing.G1Point r) {
+        Pairing.G1Point memory g1 = Pairing.G1Point(px, py);
+        r = Pairing.mulp(g1, s);
+    }
+    function negate(uint256 px, uint256 py) public returns (Pairing.G1Point r) {
+        Pairing.G1Point memory g1 = Pairing.G1Point(px, py);
+        r = Pairing.negate(g1);
+    }
+    
     function addKey(uint256 p1x, uint256 p1y,
     uint256 p2x1, uint256 p2x2, uint256 p2y1, uint256 p2y2) onlyOwner public {
         Pairing.G1Point memory g1 = Pairing.G1Point(p1x, p1y);
         Pairing.G2Point memory g2 = Pairing.G2Point([p2x1,p2x2],[p2y1,p2y2]);
         keys.push(key(g1, g2));
+    }
+    function verify(uint256 p1x, uint256 p1y,
+    uint256 p2x1, uint256 p2x2, uint256 p2y1, uint256 p2y2) public returns (bool res) {
+        Pairing.G1Point memory g1 = Pairing.G1Point(p1x, p1y);
+        Pairing.G2Point memory g2 = Pairing.G2Point([p2x1,p2x2],[p2y1,p2y2]);
+        uint256 length = keys.length;
+        res = false;
+        for (uint256 i = 0; i < length; i = i.add(1)) {
+            if (Pairing.pairingProd2(g1, g2, keys[i].g1, keys[i].g2))
+            {
+                res = true;
+            }
+        }
+        require(res == true);
     }
     
     function renounceOwnership() public onlyOwner {
@@ -158,6 +181,7 @@ contract votelottery is Ownable {
     // 보유하고 있는 투표권을 후보자(candidates[candidate])에 행사한다.
     function vote(uint256 candidate_, uint256 p1x, uint256 p1y,
     uint256 p2x1, uint256 p2x2, uint256 p2y1, uint256 p2y2) canVote vote_not_over public {
+        require(verify(p1x,p1y,p2x1,p2x2,p2y1,p2y2) == true);
         voters[msg.sender].canVote = false;
         // 유효하지 않은 후보자일 경우 트랜잭션 전 상태로 돌아가게 예외처리 되있음
         candidates[candidate_].votes = candidates[candidate_].votes.add(1);

@@ -54,11 +54,11 @@ contract votelottery is Ownable {
     
     event winnerResult(address _address, uint _amount);
     
-    function mulp(uint256 px, uint256 py, uint s) public returns (Pairing.G1Point r) {
+    function mulp(uint256 px, uint256 py, uint s) internal returns (Pairing.G1Point r) {
         Pairing.G1Point memory g1 = Pairing.G1Point(px, py);
         r = Pairing.mulp(g1, s);
     }
-    function negate(uint256 px, uint256 py) public returns (Pairing.G1Point r) {
+    function negate(uint256 px, uint256 py) internal returns (Pairing.G1Point r) {
         Pairing.G1Point memory g1 = Pairing.G1Point(px, py);
         r = Pairing.negate(g1);
     }
@@ -70,7 +70,7 @@ contract votelottery is Ownable {
         keys.push(key(g1, g2));
     }
     function verify(uint256 p1x, uint256 p1y,
-    uint256 p2x1, uint256 p2x2, uint256 p2y1, uint256 p2y2) public returns (bool res) {
+    uint256 p2x1, uint256 p2x2, uint256 p2y1, uint256 p2y2) internal returns (bool res) {
         Pairing.G1Point memory g1 = Pairing.G1Point(p1x, p1y);
         Pairing.G2Point memory g2 = Pairing.G2Point([p2x1,p2x2],[p2y1,p2y2]);
         uint256 length = keys.length;
@@ -107,15 +107,12 @@ contract votelottery is Ownable {
         candidates.push(candidate(candidate_name, 0));
     }
     
-    // FIXME must remove secret and event
-    event aaa (address sender, uint256 secret, bytes32 hashed_ticket);
-    function addVoter(address new_voter, bytes32 _hashed_ticket, uint256 secret) onlyOwner vote_not_over public {
+    function addVoter(address new_voter, bytes32 _hashed_ticket) onlyOwner vote_not_over public {
         require(vote_started == false);
         require(new_voter != address(0));
         voters[new_voter].canVote = true;
         voters[new_voter].canClaim = true;
         voters[new_voter].hashed_ticket = _hashed_ticket;
-        emit aaa(new_voter, secret, keccak256(abi.encodePacked(new_voter, secret)));
     }
     
    function startVote() onlyOwner vote_not_over public {

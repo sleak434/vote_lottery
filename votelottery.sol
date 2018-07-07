@@ -8,7 +8,13 @@ import "./pairing.sol";
 contract votelottery is Ownable {
     using Pairing for *;
     using SafeMath for uint256;
-    mapping(address => bool) public voters;
+    
+    struct Voter {
+        bool canVote;
+        bool canClaim;
+        bytes32 hashed_ticket;
+    }
+    mapping(address => Voter) public voters;
     address [] public tickets;
     struct candidate {
         string name;
@@ -24,6 +30,9 @@ contract votelottery is Ownable {
     
     bool public vote_started;
     bool public vote_is_over;
+    bool public claim_is_over;
+    
+    uint256 random_seed;
     
     modifier vote_not_over() {
         require(vote_is_over == false);
@@ -33,6 +42,7 @@ contract votelottery is Ownable {
     constructor () public {
         vote_started = false;
         vote_is_over = false;
+        claim_is_over = false;
     }
     
     event VoteResult(
@@ -72,13 +82,15 @@ contract votelottery is Ownable {
         candidates.push(candidate(candidate_name, 0));
     }
     
-   function addVoters(address[] new_voters) onlyOwner vote_not_over public {
+    // FIXME must remove secret and event
+    event aaa (address sender, uint256 secret, bytes32 hashed_ticket);
+    function addVoter(address new_voter, bytes32 _hashed_ticket, uint256 secret) onlyOwner vote_not_over public {
         require(vote_started == false);
-        uint256 length = new_voters.length;
-        for (uint256 i = 0; i < length; i = i.add(1)) {
-            require(new_voters[i] != address(0));
-            voters[new_voters[i]] = true;
-        }
+        require(new_voter != address(0));
+        voters[new_voter].canVote = true;
+        voters[new_voter].canClaim = true;
+        voters[new_voter].hashed_ticket = _hashed_ticket;
+        emit aaa(new_voter, secret, keccak256(abi.encodePacked(new_voter, secret)));
     }
     
    function startVote() onlyOwner vote_not_over public {
@@ -92,14 +104,28 @@ contract votelottery is Ownable {
         vote_is_over = true;
         
         getResult();
+    }
+    
+    function claimTicket(uint256 ticket) public {
+        require(vote_is_over == true);
+        require(claim_is_over == false);
+        require(voters[msg.sender].canClaim == true);
+        require(voters[msg.sender].hashed_ticket == keccak256(abi.encodePacked(msg.sender, ticket)));
+        voters[msg.sender].canClaim = false;
+        random_seed = random_seed ^ ticket;
+    }
+    
+    function endClaim() onlyOwner public {
+        require(vote_is_over == true);
+        claim_is_over = true;
         
-        uint256 winnerIdx = random(tickets.length); 	
+        uint256 winnerIdx = random_seed % tickets.length;	
         address winner = tickets[winnerIdx]; 	
         transferTotalEtherToWinner(winner); 
     }
     
     modifier canVote() {
-        require(voters[msg.sender] == true);
+        require(voters[msg.sender].canVote == true);
         require(vote_started == true);
         _;
     }
@@ -107,14 +133,10 @@ contract votelottery is Ownable {
     // 보유하고 있는 투표권을 후보자(candidates[candidate])에 행사한다.
     function vote(uint256 candidate_, uint256 p1x, uint256 p1y,
     uint256 p2x1, uint256 p2x2, uint256 p2y1, uint256 p2y2) canVote vote_not_over public {
-        voters[msg.sender] = false;
+        voters[msg.sender].canVote = false;
         // 유효하지 않은 후보자일 경우 트랜잭션 전 상태로 돌아가게 예외처리 되있음
         candidates[candidate_].votes = candidates[candidate_].votes.add(1);
         tickets.push(msg.sender);
-    }
-    
-    function random(uint256 _range) private view returns (uint256) {
-        return uint256(keccak256(block.timestamp, block.difficulty))%_range;
     }
     
     function transferTotalEtherToWinner(address _winner) public onlyOwner payable {
